@@ -53,7 +53,7 @@ def calculate_age(birth, death):
 
     if days < 0:
         months -= 1
-        days += 30  # lihtsustatud arvestus
+        days += 30
 
     if months < 0:
         years -= 1
@@ -83,64 +83,49 @@ print(f"Otsin isikuid kuupäevaga {TARGET_DAY:02d}.{TARGET_MONTH:02d}")
 print("")
 
 
-birth_match_count = 0   # mitu sünnikuupäeva vastet
-death_match_count = 0   # mitu surmakuupäeva vastet
-total_count = 0         # mitu rida kokku faili läks
+birth_count = 0   # mitu sünniaega leiti
+death_count = 0   # mitu surmaaega leiti
+total_count = 0   # mitu rida kokku faili läks
 
 with open(input_file, encoding="utf-8") as f:
     reader = csv.reader(f, delimiter=";")
     header = next(reader)
 
-    # Lisame uue veeru päisesse
     header.append("Vanus")
 
     result_rows = []
 
     for row in reader:
         # EELDUS:
-        # veerg 2 = sünnikuupäev
-        # veerg 3 = surmakuupäev
+        # veerg 2 = sünniaeg
+        # veerg 3 = surmaaeg
         birth_date = parse_date(row[2])
         death_date = parse_date(row[3])
 
-        include = False
+        found_birth = False
+        found_death = False
         age = ""
 
         # -------------------------
-        # KONTROLL: SÜNNIPÄEV
+        # SÜNNIAEG
         # -------------------------
-        birth_match = (
-            birth_date and
-            birth_date.day == TARGET_DAY and
-            birth_date.month == TARGET_MONTH
-        )
+        if birth_date and birth_date.day == TARGET_DAY and birth_date.month == TARGET_MONTH:
+            found_birth = True
+            birth_count += 1
 
         # -------------------------
-        # KONTROLL: SURMAPÄEV
+        # SURMAAEG
         # -------------------------
-        death_match = (
-            death_date and
-            death_date.day == TARGET_DAY and
-            death_date.month == TARGET_MONTH
-        )
-
-        if birth_match:
-            birth_match_count += 1
-            include = True
-
-        if death_match:
-            death_match_count += 1
-            include = True
+        if death_date and death_date.day == TARGET_DAY and death_date.month == TARGET_MONTH:
+            found_death = True
+            death_count += 1
             age = calculate_age(birth_date, death_date)
 
-        if include:
+        if found_birth or found_death:
             total_count += 1
 
-            # Vormindame kuupäevad Eesti formaati
             row[2] = format_date(birth_date)
             row[3] = format_date(death_date)
-
-            # Lisame vanuse veeru
             row.append(age)
 
             result_rows.append(row)
@@ -153,9 +138,9 @@ with open(output_file, "w", encoding="utf-8", newline="") as f:
 
 
 # =========================
-# TULEMUSTE VÄLJASTUS
+# TULEMUSTE VÄLJUND
 # =========================
-print(f"Sünnikuupäeva vasteid leiti: {birth_match_count}")
-print(f"Surmakuupäeva vasteid leiti: {death_match_count}")
+print(f"Sünniaegu leiti: {birth_count}")
+print(f"Surmaaegu leiti: {death_count}")
 print(f"Kokku kirjutati faili: {total_count} rida")
 print(f"Tulemus salvestatud faili '{output_file}'.")
