@@ -1,4 +1,5 @@
 import csv
+import os
 from datetime import datetime
 
 # ==================================
@@ -12,29 +13,27 @@ TARGET_MONTH = 1    # Kuu (jaanuar)
 def parse_date(date_str):
     """
     Teisendab kuupäeva datetime objektiks.
-    Toetatud formaadid:
+    Toetab formaate:
     - AAAA-KK-PP
     - PP.KK.AAAA
-    Kui kuupäev puudub või on vale, tagastab None
+    Kui kuupäev puudub või on vigane, tagastab None
     """
     if not date_str:
         return None
 
     date_str = date_str.strip()
 
-    try:
-        return datetime.strptime(date_str, "%Y-%m-%d")
-    except ValueError:
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
         try:
-            return datetime.strptime(date_str, "%d.%m.%Y")
+            return datetime.strptime(date_str, fmt)
         except ValueError:
-            return None
+            pass
+
+    return None
 
 
 def format_date(date_obj):
-    """
-    Vormindab kuupäeva Eesti formaati PP.KK.AAAA
-    """
+    """Vormindab kuupäeva Eesti formaati PP.KK.AAAA"""
     if not date_obj:
         return ""
     return date_obj.strftime("%d.%m.%Y")
@@ -43,7 +42,7 @@ def format_date(date_obj):
 def calculate_age(birth, death):
     """
     Arvutab vanuse surma hetkel
-    Ainult siis, kui sünni- ja surmakuupäev on olemas
+    Arvestab aastaid, kuid ja päevi
     """
     if not birth or not death:
         return ""
@@ -71,6 +70,19 @@ output_file = "tulemus.csv"
 # =========================
 
 
+# =========================
+# FAILI OLEMASOLU KONTROLL
+# =========================
+if not os.path.exists(input_file):
+    print(f"VIGA: Faili '{input_file}' ei leitud!")
+    exit()
+
+print(f"Otsin isikuid kuupäevaga {TARGET_DAY:02d}.{TARGET_MONTH:02d}")
+# =========================
+
+
+found_count = 0
+
 with open(input_file, encoding="utf-8") as f:
     reader = csv.reader(f, delimiter=";")
     header = next(reader)
@@ -90,18 +102,22 @@ with open(input_file, encoding="utf-8") as f:
         include = False
         age = ""
 
-        # Kontroll: sündinud 27.01
+        # -------------------------
+        # KONTROLL: SÜNNIPÄEV
+        # -------------------------
         if birth_date and birth_date.day == TARGET_DAY and birth_date.month == TARGET_MONTH:
             include = True
 
-        # Kontroll: surnud 27.01
+        # -------------------------
+        # KONTROLL: SURMAPÄEV
+        # -------------------------
         if death_date and death_date.day == TARGET_DAY and death_date.month == TARGET_MONTH:
             include = True
-
-            # Vanust arvutame ainult siis, kui sünnikuupäev on olemas
             age = calculate_age(birth_date, death_date)
 
         if include:
+            found_count += 1
+
             # Vormindame kuupäevad Eesti formaati
             row[2] = format_date(birth_date)
             row[3] = format_date(death_date)
@@ -118,4 +134,8 @@ with open(output_file, "w", encoding="utf-8", newline="") as f:
     writer.writerows(result_rows)
 
 
-print("Valmis! Fail 'tulemus.csv' on loodud.")
+# =========================
+# TULEMUSE TEADE
+# =========================
+print(f"Leiti kokku {found_count} sobivat isikut.")
+print(f"Tulemus salvestatud faili '{output_file}'.")
