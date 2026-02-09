@@ -76,12 +76,16 @@ output_file = "tulemus.csv"
 if not os.path.exists(input_file):
     print(f"VIGA: Faili '{input_file}' ei leitud!")
     exit()
-
-print(f"Otsin isikuid kuupäevaga {TARGET_DAY:02d}.{TARGET_MONTH:02d}")
 # =========================
 
 
-found_count = 0
+print(f"Otsin isikuid kuupäevaga {TARGET_DAY:02d}.{TARGET_MONTH:02d}")
+print("")
+
+
+birth_match_count = 0   # mitu sünnikuupäeva vastet
+death_match_count = 0   # mitu surmakuupäeva vastet
+total_count = 0         # mitu rida kokku faili läks
 
 with open(input_file, encoding="utf-8") as f:
     reader = csv.reader(f, delimiter=";")
@@ -105,18 +109,32 @@ with open(input_file, encoding="utf-8") as f:
         # -------------------------
         # KONTROLL: SÜNNIPÄEV
         # -------------------------
-        if birth_date and birth_date.day == TARGET_DAY and birth_date.month == TARGET_MONTH:
-            include = True
+        birth_match = (
+            birth_date and
+            birth_date.day == TARGET_DAY and
+            birth_date.month == TARGET_MONTH
+        )
 
         # -------------------------
         # KONTROLL: SURMAPÄEV
         # -------------------------
-        if death_date and death_date.day == TARGET_DAY and death_date.month == TARGET_MONTH:
+        death_match = (
+            death_date and
+            death_date.day == TARGET_DAY and
+            death_date.month == TARGET_MONTH
+        )
+
+        if birth_match:
+            birth_match_count += 1
+            include = True
+
+        if death_match:
+            death_match_count += 1
             include = True
             age = calculate_age(birth_date, death_date)
 
         if include:
-            found_count += 1
+            total_count += 1
 
             # Vormindame kuupäevad Eesti formaati
             row[2] = format_date(birth_date)
@@ -135,7 +153,9 @@ with open(output_file, "w", encoding="utf-8", newline="") as f:
 
 
 # =========================
-# TULEMUSE TEADE
+# TULEMUSTE VÄLJASTUS
 # =========================
-print(f"Leiti kokku {found_count} sobivat isikut.")
+print(f"Sünnikuupäeva vasteid leiti: {birth_match_count}")
+print(f"Surmakuupäeva vasteid leiti: {death_match_count}")
+print(f"Kokku kirjutati faili: {total_count} rida")
 print(f"Tulemus salvestatud faili '{output_file}'.")
